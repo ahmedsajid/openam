@@ -12,5 +12,5 @@ Python script which loops through CSV file and creates users in OpenAM using Ope
 #### Usage
 e.g,
 ```
-./add_users.py -i _csvfile_ -u _adminuser_ -p _adminpass_ -l _openamurl_
+./add_users.py -i CSVFILE -u ADMINUSER -p ADMINPASS -l OPENAMURL
 ```
