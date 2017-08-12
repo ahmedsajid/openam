@@ -1,10 +1,16 @@
 # openam
 OpenAM related scripts
 
-***add_users.py****
+### Requirements
+
+* Python 2.7 (hopefully works with Python 3.x as well)
+
+### add_users.py
 
 Python script which loops through CSV file and creates users in OpenAM using OpenAM Restful API.
 
+#### Usage
 e.g,
-
+```
 ./add_users.py -i _csvfile_ -u _adminuser_ -p _adminpass_ -l _openamurl_
+```
