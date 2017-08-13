@@ -2,7 +2,7 @@
 __author_name__ = 'Ahmed Sajid'
 __author_email__ = 'ahmed4343@hotmail.com'
 __author__ = '{0} <{1}>'.format(__author_name__, __author_email__)
-__version__ = '1.0'
+__version__ = '1.1'
 
 import json
 import sys, getopt
@@ -12,8 +12,8 @@ import tempfile
 import requests
 
 def main(argv):
-    input_file = ''
     global openam_url 
+    global input_file
     try:
         opts, args = getopt.getopt(argv,"hi:u:p:l:")
     except getopt.GetoptError:
@@ -31,7 +31,6 @@ def main(argv):
             adm_pass = arg
         elif opt in ("-l"):
             openam_url = arg
-
     get_session(adm_user,adm_pass) 
     read_csv(input_file)
 
@@ -63,7 +62,16 @@ def search_user(userdata):
     url = openam_url + "/json/users/" + userdata["username"]
     headers = {'Content-Type': 'application/json','iplanetDirectoryPro': session_id}
     r = requests.get(url,headers=headers)
-    return r.status_code
+    return r
+
+#Search User
+def compare_userdata(csv_userdata,openam_userdata):
+    for field in csv_userdata:
+        if "userpassword" not in field:
+            if csv_userdata[field] == str(openam_userdata[field]).strip('u\'[]'):
+                continue
+            else:
+                return False
 
 #Create User
 def create_user(userdata):
@@ -91,34 +99,51 @@ def read_csv(file):
     with open(utf8_file.name) as csvfile:
         reader = csv.DictReader(csvfile)
         #title = reader.fieldnames
+
         for row in reader:
 
             json_row = json.loads(json.dumps(clean_empty(row)))
             
             # search user
-            search_return_code = search_user(json_row)
+            search_return = search_user(json_row)
 
-            if search_return_code == 200:
+            # If User exists
+            if search_return.status_code == 200:
+                
+                compare_return = compare_userdata(json_row,json.loads(search_return._content))
 
-                update_return_code = update_user(json_row)
+                # If userdata doesn't match
+                if compare_return is False:
 
-                if update_return_code == 200:
-                    print "Successfully Updated user: " + json_row["username"]
+                    update_return_code = update_user(json_row)
+                    
+                    # If update was successful
+                    if update_return_code == 200:
+                        print "Successfully Updated user: " + json_row["username"]
+
+                    # Something went wrong
+                    else:
+                        print "Couldn't update" + json_row["username"] + ". return code: ",update_return_code
+                # If userdata matches skip user
                 else:
-                    print "Couldn't update" + json_row["username"] + ". return code: ",update_return_code
+                    print "Skipping user:" + json_row["username"]
 
-            elif search_return_code == 404:
+            # If user doesn't exits
+            elif search_return.status_code == 404:
 
                 create_return_code = create_user(json_row)
-
+                 
+                # If user created OK
                 if create_return_code == 201:
                     print "Successfully Created user: " + json_row["username"]
+
+                # Something went wrong
                 else:
                     print "Couldn't create" + json_row["username"] + ". return code: ",create_return_code
 
+            # Something went wrong
             else:
-                #update_user(row)
-                print "Couldn't perform search. return code: ",search_return_code
+                print "Couldn't perform search. return code: ",search_return.status_code
                 sys.exit()
 
 if __name__ == "__main__":
