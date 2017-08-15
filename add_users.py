@@ -67,11 +67,13 @@ def search_user(userdata):
 #Search User
 def compare_userdata(csv_userdata,openam_userdata):
     for field in csv_userdata:
-        if "userpassword" not in field:
-            if csv_userdata[field] == str(openam_userdata[field]).strip('u\'[]'):
+        if field in openam_userdata:
+            if csv_userdata[field].lower() == str(openam_userdata[field]).lstrip('u\'[').rstrip(']\'').lower():
                 continue
             else:
                 return False
+        elif field != "userpassword" and field not in openam_userdata:
+            return False
 
 #Create User
 def create_user(userdata):
