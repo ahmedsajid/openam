@@ -98,13 +98,18 @@ def read_csv(file):
     target = open(utf8_file.name,"w")
     target.write(unicode(source.read(), "latin1").encode("utf-8"))
     target.close()
-    with open(utf8_file.name) as csvfile:
-        reader = csv.DictReader(csvfile)
+    
+    with open(target.name) as csvfile:
+        # Remote whitespaces from header
+        header = [h.strip() for h in csvfile.next().split(',')]
+        reader = csv.DictReader(csvfile,fieldnames=header)
         #title = reader.fieldnames
 
         for row in reader:
 
-            json_row = json.loads(json.dumps(clean_empty(row)))
+            # Remote whitespaces from rows
+            clean_row = { k:v.strip() for k, v in row.iteritems()}
+            json_row = json.loads(json.dumps(clean_empty(clean_row)))
             
             # search user
             search_return = search_user(json_row)
