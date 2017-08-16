@@ -2,14 +2,15 @@
 __author_name__ = 'Ahmed Sajid'
 __author_email__ = 'ahmed4343@hotmail.com'
 __author__ = '{0} <{1}>'.format(__author_name__, __author_email__)
-__version__ = '1.1'
+__version__ = '1.0'
 
 import json
-import sys, getopt
+import sys
+import getopt
 import csv
 import json
-import tempfile
 import requests
+import tempfile
 
 def main(argv):
     global openam_url 
@@ -17,11 +18,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"hi:u:p:l:")
     except getopt.GetoptError:
-        print 'mybank_users.py -i <path to inputfile> -u <admin username> -p <admin password> -l <URL To OPENAM>'
+        print 'add_users.py -i <path to inputfile> -u <admin username> -p <admin password> -l <URL To OPENAM>'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'mybank_users.py -i <path to inputfile> -u <admin username> -p <admin password> -l <URL To OPENAM>'
+            print 'add_users.py -i <path to inputfile> -u <admin username> -p <admin password> -l <URL To OPENAM>'
             sys.exit()
         elif opt in ("-i"):
             input_file = arg
@@ -68,7 +69,7 @@ def search_user(userdata):
 def compare_userdata(csv_userdata,openam_userdata):
     for field in csv_userdata:
         if field in openam_userdata:
-            if csv_userdata[field].lower() == str(openam_userdata[field]).lstrip('u\'[').rstrip(']\'').lower():
+            if csv_userdata[field].lower() == str(openam_userdata[field]).lstrip('u\'[').rstrip(']\'').lower().decode('unicode-escape'):
                 continue
             else:
                 return False
@@ -91,16 +92,12 @@ def update_user(userdata):
 
 #Read CSV File
 def read_csv(file):
-    data = {}
-    json_list = []
     utf8_file = tempfile.NamedTemporaryFile()
     source = open(file)
     target = open(utf8_file.name,"w")
     target.write(unicode(source.read(), "latin1").encode("utf-8"))
     target.close()
-    
     with open(target.name) as csvfile:
-        # Remote whitespaces from header
         header = [h.strip() for h in csvfile.next().split(',')]
         reader = csv.DictReader(csvfile,fieldnames=header)
         #title = reader.fieldnames
@@ -116,7 +113,6 @@ def read_csv(file):
 
             # If User exists
             if search_return.status_code == 200:
-                
                 compare_return = compare_userdata(json_row,json.loads(search_return._content))
 
                 # If userdata doesn't match
@@ -126,11 +122,11 @@ def read_csv(file):
                     
                     # If update was successful
                     if update_return_code == 200:
-                        print "Successfully Updated user: " + json_row["username"]
+                        print "Successfully Updated user:" + json_row["username"]
 
                     # Something went wrong
                     else:
-                        print "Couldn't update" + json_row["username"] + ". return code: ",update_return_code
+                        print "Couldn't update " + json_row["username"] + ". return code: ",update_return_code
                 # If userdata matches skip user
                 else:
                     print "Skipping user:" + json_row["username"]
@@ -146,7 +142,7 @@ def read_csv(file):
 
                 # Something went wrong
                 else:
-                    print "Couldn't create" + json_row["username"] + ". return code: ",create_return_code
+                    print "Couldn't create " + json_row["username"] + ". return code: ",create_return_code
 
             # Something went wrong
             else:
@@ -157,4 +153,4 @@ if __name__ == "__main__":
    if sys.argv[1:]:
       main(sys.argv[1:])    
    else:
-      print 'Usage: mybank_users.py -i <path to inputfile> -u <admin username> -p <admin password> -l <URL To OPENAM>'
+      print 'Usage: add_users.py -i <path to inputfile> -u <admin username> -p <admin password> -l <URL To OPENAM>'
